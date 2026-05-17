@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="light" data-lang="bn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>হিসাব — Accounting System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-icon">📊</div>
+      <div class="logo-text">
+        <input id="storeName" class="store-name-input" placeholder="স্টোরের নাম"/>
+        <span class="logo-sub">Accounting</span>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label"><span data-bn="মেনু" data-en="MENU">মেনু</span></div>
+    <a class="nav-item active" data-page="dashboard"><span class="nav-icon">🏠</span><span class="nav-label" data-bn="ড্যাশবোর্ড" data-en="Dashboard">ড্যাশবোর্ড</span></a>
+    <a class="nav-item" data-page="sales"><span class="nav-icon">🛒</span><span class="nav-label" data-bn="বিক্রি" data-en="Sales">বিক্রি</span></a>
+    <a class="nav-item" data-page="expense"><span class="nav-icon">💸</span><span class="nav-label" data-bn="খরচ" data-en="Expense">খরচ</span></a>
+    <a class="nav-item" data-page="due"><span class="nav-icon">💳</span><span class="nav-label" data-bn="বাকি / পেমেন্ট" data-en="Due / Payment">বাকি / পেমেন্ট</span></a>
+    <div class="nav-section-label"><span data-bn="পরিচালনা" data-en="MANAGE">পরিচালনা</span></div>
+    <a class="nav-item" data-page="customer"><span class="nav-icon">👥</span><span class="nav-label" data-bn="কাস্টমার" data-en="Customer">কাস্টমার</span></a>
+    <a class="nav-item" data-page="supplier"><span class="nav-icon">🏭</span><span class="nav-label" data-bn="সাপ্লায়ার" data-en="Supplier">সাপ্লায়ার</span></a>
+    <a class="nav-item" data-page="report"><span class="nav-icon">📈</span><span class="nav-label" data-bn="রিপোর্ট" data-en="Report">রিপোর্ট</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="btn-theme" id="themeBtn">🌙 <span id="themeBtnLabel" data-bn="ডার্ক মোড" data-en="Dark Mode">ডার্ক মোড</span></button>
+  </div>
+</aside>
+
+<div class="main-wrapper" id="mainWrapper">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" id="menuBtn">☰</button>
+      <div class="page-title" id="pageTitle">ড্যাশবোর্ড</div>
+    </div>
+    <div class="topbar-right">
+      <div class="date-filter">
+        <input type="date" id="dateFrom" class="date-input"/>
+        <span class="date-sep">—</span>
+        <input type="date" id="dateTo" class="date-input"/>
+      </div>
+      <button class="btn-lang" id="langBtn">🇬🇧 EN</button>
+      <button class="btn-export" id="exportBtn">📤 Export</button>
+      <label class="btn-export" style="cursor:pointer">📥 Import<input type="file" id="importFile" accept=".json" style="display:none"/></label>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- DASHBOARD -->
+    <section class="page active" id="page-dashboard">
+      <div class="summary-cards">
+        <div class="card card-green"><div class="card-icon-wrap">🛒</div><div class="card-info"><div class="card-label" data-bn="মোট বিক্রি" data-en="Total Sales">মোট বিক্রি</div><div class="card-value" id="dash-sales">৳0</div></div></div>
+        <div class="card card-red"><div class="card-icon-wrap">💸</div><div class="card-info"><div class="card-label" data-bn="মোট খরচ" data-en="Total Expense">মোট খরচ</div><div class="card-value" id="dash-expense">৳0</div></div></div>
+        <div class="card card-blue"><div class="card-icon-wrap">💰</div><div class="card-info"><div class="card-label" data-bn="ক্যাশ ব্যালেন্স" data-en="Cash Balance">ক্যাশ ব্যালেন্স</div><div class="card-value" id="dash-balance">৳0</div><div class="card-sub" data-bn="রিসিভড − পেইড" data-en="Received − Paid">রিসিভড − পেইড</div></div></div>
+        <div class="card card-purple"><div class="card-icon-wrap">📥</div><div class="card-info"><div class="card-label" data-bn="রিসিভড পেমেন্ট" data-en="Received">রিসিভড পেমেন্ট</div><div class="card-value" id="dash-received">৳0</div></div></div>
+        <div class="card card-orange"><div class="card-icon-wrap">📤</div><div class="card-info"><div class="card-label" data-bn="পেইড পেমেন্ট" data-en="Paid">পেইড পেমেন্ট</div><div class="card-value" id="dash-paid">৳0</div></div></div>
+        <div class="card card-teal"><div class="card-icon-wrap">⚖️</div><div class="card-info"><div class="card-label" data-bn="পাওনা / দেয়া বাকি" data-en="Receivable / Payable">পাওনা / দেয়া বাকি</div><div class="card-value" id="dash-due">৳0 / ৳0</div></div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-card chart-big"><div class="chart-header"><h3 data-bn="মাসিক বিক্রি বনাম খরচ" data-en="Monthly Sales vs Expense">মাসিক বিক্রি বনাম খরচ</h3></div><canvas id="barChart"></canvas></div>
+        <div class="chart-card chart-sm"><div class="chart-header"><h3 data-bn="সারসংক্ষেপ" data-en="Summary">সারসংক্ষেপ</h3></div><canvas id="pieChart"></canvas></div>
+      </div>
+      <div class="recent-row">
+        <div class="recent-card"><div class="section-header"><h3 data-bn="সাম্প্রতিক বিক্রি" data-en="Recent Sales">সাম্প্রতিক বিক্রি</h3></div>
+          <table class="data-table"><thead><tr><th data-bn="তারিখ" data-en="Date">তারিখ</th><th data-bn="কাস্টমার" data-en="Customer">কাস্টমার</th><th data-bn="পরিমাণ" data-en="Amount">পরিমাণ</th><th data-bn="নোট" data-en="Note">নোট</th></tr></thead><tbody id="dash-sales-body"><tr><td colspan="4" class="empty-msg">কোনো ডেটা নেই</td></tr></tbody></table></div>
+        <div class="recent-card"><div class="section-header"><h3 data-bn="সাম্প্রতিক খরচ" data-en="Recent Expense">সাম্প্রতিক খরচ</h3></div>
+          <table class="data-table"><thead><tr><th data-bn="তারিখ" data-en="Date">তারিখ</th><th data-bn="সাপ্লায়ার" data-en="Supplier">সাপ্লায়ার</th><th data-bn="পরিমাণ" data-en="Amount">পরিমাণ</th><th data-bn="নোট" data-en="Note">নোট</th></tr></thead><tbody id="dash-expense-body"><tr><td colspan="4" class="empty-msg">কোনো ডেটা নেই</td></tr></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- SALES -->
+    <section class="page" id="page-sales">
+      <div class="page-action-bar"><h2 data-bn="বিক্রির তালিকা" data-en="Sales List">বিক্রির তালিকা</h2><button class="btn-primary" id="addSaleBtn">+ <span data-bn="নতুন বিক্রি" data-en="New Sale">নতুন বিক্রি</span></button></div>
+      <div class="table-card"><table class="data-table"><thead><tr><th data-bn="তারিখ" data-en="Date">তারিখ</th><th data-bn="কাস্টমার" data-en="Customer">কাস্টমার</th><th data-bn="পরিমাণ" data-en="Amount">পরিমাণ</th><th data-bn="নোট" data-en="Note">নোট</th><th data-bn="অ্যাকশন" data-en="Action">অ্যাকশন</th></tr></thead><tbody id="sales-body"><tr><td colspan="5" class="empty-msg">কোনো বিক্রি নেই</td></tr></tbody></table></div>
+    </section>
+
+    <!-- EXPENSE -->
+    <section class="page" id="page-expense">
+      <div class="page-action-bar"><h2 data-bn="খরচের তালিকা" data-en="Expense List">খরচের তালিকা</h2><button class="btn-primary" id="addExpenseBtn">+ <span data-bn="নতুন খরচ" data-en="New Expense">নতুন খরচ</span></button></div>
+      <div class="table-card"><table class="data-table"><thead><tr><th data-bn="তারিখ" data-en="Date">তারিখ</th><th data-bn="সাপ্লায়ার" data-en="Supplier">সাপ্লায়ার</th><th data-bn="পরিমাণ" data-en="Amount">পরিমাণ</th><th data-bn="নোট" data-en="Note">নোট</th><th data-bn="অ্যাকশন" data-en="Action">অ্যাকশন</th></tr></thead><tbody id="expense-body"><tr><td colspan="5" class="empty-msg">কোনো খরচ নেই</td></tr></tbody></table></div>
+    </section>
+
+    <!-- DUE / PAYMENT -->
+    <section class="page" id="page-due">
+      <div class="page-action-bar"><h2 data-bn="বাকি ও পেমেন্ট" data-en="Due & Payment">বাকি ও পেমেন্ট</h2><button class="btn-primary" id="addDueBtn">+ <span data-bn="নতুন এন্ট্রি" data-en="New Entry">নতুন এন্ট্রি</span></button></div>
+      <div class="table-card"><table class="data-table"><thead><tr><th data-bn="তারিখ" data-en="Date">তারিখ</th><th data-bn="ধরন" data-en="Type">ধরন</th><th data-bn="নাম" data-en="Name">নাম</th><th data-bn="পরিমাণ" data-en="Amount">পরিমাণ</th><th data-bn="নোট" data-en="Note">নোট</th><th data-bn="অ্যাকশন" data-en="Action">অ্যাকশন</th></tr></thead><tbody id="due-body"><tr><td colspan="6" class="empty-msg">কোনো এন্ট্রি নেই</td></tr></tbody></table></div>
+    </section>
+
+    <!-- CUSTOMER -->
+    <section class="page" id="page-customer">
+      <div class="page-action-bar"><h2 data-bn="কাস্টমার তালিকা" data-en="Customer List">কাস্টমার তালিকা</h2><button class="btn-primary" id="addCustomerBtn">+ <span data-bn="নতুন কাস্টমার" data-en="New Customer">নতুন কাস্টমার</span></button></div>
+      <div class="search-bar"><input type="text" id="cusSearch" class="search-input" placeholder="নাম বা মোবাইল দিয়ে সার্চ করুন..."/></div>
+      <div class="table-card"><table class="data-table"><thead><tr><th data-bn="নাম" data-en="Name">নাম</th><th data-bn="মোবাইল" data-en="Mobile">মোবাইল</th><th data-bn="ঠিকানা" data-en="Address">ঠিকানা</th><th data-bn="মোট পাওনা" data-en="Total Due">মোট পাওনা</th><th data-bn="অ্যাকশন" data-en="Action">অ্যাকশন</th></tr></thead><tbody id="customer-body"><tr><td colspan="5" class="empty-msg">কোনো কাস্টমার নেই</td></tr></tbody></table></div>
+    </section>
+
+    <!-- SUPPLIER -->
+    <section class="page" id="page-supplier">
+      <div class="page-action-bar"><h2 data-bn="সাপ্লায়ার তালিকা" data-en="Supplier List">সাপ্লায়ার তালিকা</h2><button class="btn-primary" id="addSupplierBtn">+ <span data-bn="নতুন সাপ্লায়ার" data-en="New Supplier">নতুন সাপ্লায়ার</span></button></div>
+      <div class="search-bar"><input type="text" id="supSearch" class="search-input" placeholder="নাম বা মোবাইল দিয়ে সার্চ করুন..."/></div>
+      <div class="table-card"><table class="data-table"><thead><tr><th data-bn="নাম" data-en="Name">নাম</th><th data-bn="মোবাইল" data-en="Mobile">মোবাইল</th><th data-bn="ঠিকানা" data-en="Address">ঠিকানা</th><th data-bn="দেয়া বাকি" data-en="Total Payable">দেয়া বাকি</th><th data-bn="অ্যাকশন" data-en="Action">অ্যাকশন</th></tr></thead><tbody id="supplier-body"><tr><td colspan="5" class="empty-msg">কোনো সাপ্লায়ার নেই</td></tr></tbody></table></div>
+    </section>
+
+    <!-- REPORT -->
+    <section class="page" id="page-report">
+      <div class="page-action-bar"><h2 data-bn="রিপোর্ট" data-en="Report">রিপোর্ট</h2><button class="btn-primary" id="printReportBtn">🖨️ <span data-bn="প্রিন্ট" data-en="Print">প্রিন্ট</span></button></div>
+      <div class="summary-cards" style="margin-bottom:24px">
+        <div class="card card-green"><div class="card-icon-wrap">💹</div><div class="card-info"><div class="card-label" data-bn="মোট বিক্রি" data-en="Total Sales">মোট বিক্রি</div><div class="card-value" id="rep-sales">৳0</div></div></div>
+        <div class="card card-red"><div class="card-icon-wrap">📉</div><div class="card-info"><div class="card-label" data-bn="মোট খরচ" data-en="Total Expense">মোট খরচ</div><div class="card-value" id="rep-expense">৳0</div></div></div>
+        <div class="card card-blue"><div class="card-icon-wrap">💰</div><div class="card-info"><div class="card-label" data-bn="ক্যাশ ব্যালেন্স" data-en="Cash Balance">ক্যাশ ব্যালেন্স</div><div class="card-value" id="rep-cash">৳0</div></div></div>
+        <div class="card card-teal"><div class="card-icon-wrap">⏳</div><div class="card-info"><div class="card-label" data-bn="মোট পাওনা" data-en="Total Due">মোট পাওনা</div><div class="card-value" id="rep-due">৳0</div></div></div>
+      </div>
+      <div class="table-card" style="margin-bottom:16px">
+        <div class="section-header" style="padding:16px 20px 0"><h3 data-bn="বিক্রির বিবরণ" data-en="Sales Details">বিক্রির বিবরণ</h3></div>
+        <table class="data-table"><thead><tr><th data-bn="তারিখ" data-en="Date">তারিখ</th><th data-bn="কাস্টমার" data-en="Customer">কাস্টমার</th><th data-bn="পরিমাণ" data-en="Amount">পরিমাণ</th><th data-bn="নোট" data-en="Note">নোট</th></tr></thead><tbody id="rep-sales-body"></tbody></table>
+      </div>
+      <div class="table-card" style="margin-bottom:16px">
+        <div class="section-header" style="padding:16px 20px 0"><h3 data-bn="খরচের বিবরণ" data-en="Expense Details">খরচের বিবরণ</h3></div>
+        <table class="data-table"><thead><tr><th data-bn="তারিখ" data-en="Date">তারিখ</th><th data-bn="সাপ্লায়ার" data-en="Supplier">সাপ্লায়ার</th><th data-bn="পরিমাণ" data-en="Amount">পরিমাণ</th><th data-bn="নোট" data-en="Note">নোট</th></tr></thead><tbody id="rep-expense-body"></tbody></table>
+      </div>
+      <div class="table-card">
+        <div class="section-header" style="padding:16px 20px 0"><h3 data-bn="পেমেন্টের বিবরণ" data-en="Payment Details">পেমেন্টের বিবরণ</h3></div>
+        <table class="data-table"><thead><tr><th data-bn="তারিখ" data-en="Date">তারিখ</th><th data-bn="ধরন" data-en="Type">ধরন</th><th data-bn="নাম" data-en="Name">নাম</th><th data-bn="পরিমাণ" data-en="Amount">পরিমাণ</th><th data-bn="নোট" data-en="Note">নোট</th></tr></thead><tbody id="rep-payment-body"></tbody></table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-header"><h3 id="modalTitle">এন্ট্রি</h3><button class="modal-close" id="modalClose">✕</button></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer"><button class="btn-cancel" id="modalCancel">বাতিল</button><button class="btn-save" id="modalSave">সংরক্ষণ</button></div>
+  </div>
+</div>
+
+<!-- PARTY PROFILE MODAL -->
+<div class="modal-overlay" id="profileOverlay">
+  <div class="modal profile-modal" id="profileModal">
+    <div class="modal-header">
+      <div>
+        <h3 id="profileName">নাম</h3>
+        <div id="profileMeta" class="profile-meta"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="profile-balance" id="profileBalance">৳0</div>
+        <button class="modal-close" id="profileClose">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="profile-grid">
+        <div>
+          <h4 id="profileLeftH" style="margin-bottom:10px;font-size:14px;font-weight:700;color:var(--text-muted)">বিক্রি / খরচ</h4>
+          <table class="data-table"><thead><tr><th>তারিখ</th><th>পরিমাণ</th><th>নোট</th></tr></thead><tbody id="profileLeftBody"></tbody></table>
+        </div>
+        <div>
+          <h4 style="margin-bottom:10px;font-size:14px;font-weight:700;color:var(--text-muted)" data-bn="পেমেন্ট ইতিহাস" data-en="Payment History">পেমেন্ট ইতিহাস</h4>
+          <table class="data-table"><thead><tr><th>তারিখ</th><th>ধরন</th><th>পরিমাণ</th><th>নোট</th></tr></thead><tbody id="profileRightBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTOCOMPLETE DROPDOWN -->
+<div id="acDropdown" class="ac-dropdown" style="display:none"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
