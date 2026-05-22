@@ -7,7 +7,7 @@
 /* ================================================================
    ⚠️  এখানে আপনার Google Apps Script Web App URL বসান
    ================================================================ */
-const SCRIPT_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzFZbX2rzVpoENQyDIWf0djYC6K_DC1CCrjaWlPsZDbW7y-7Ed7pb2eZuh1om8IlcZDdA/exec';
 /* ================================================================ */
 
 // ===== UTILS =====
