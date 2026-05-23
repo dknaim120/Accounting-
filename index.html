@@ -103,14 +103,14 @@
     <section class="page" id="page-customer">
       <div class="page-action-bar"><h2 data-bn="কাস্টমার তালিকা" data-en="Customer List">কাস্টমার তালিকা</h2><button class="btn-primary" id="addCustomerBtn">+ <span data-bn="নতুন কাস্টমার" data-en="New Customer">নতুন কাস্টমার</span></button></div>
       <div class="search-bar"><input type="text" id="cusSearch" class="search-input" placeholder="নাম বা মোবাইল দিয়ে সার্চ করুন..."/></div>
-      <div class="table-card"><table class="data-table"><thead><tr><th data-bn="নাম" data-en="Name">নাম</th><th data-bn="মোবাইল" data-en="Mobile">মোবাইল</th><th data-bn="ঠিকানা" data-en="Address">ঠিকানা</th><th data-bn="মোট পাওনা" data-en="Total Due">মোট পাওনা</th><th data-bn="অ্যাকশন" data-en="Action">অ্যাকশন</th></tr></thead><tbody id="customer-body"><tr><td colspan="5" class="empty-msg">কোনো কাস্টমার নেই</td></tr></tbody></table></div>
+      <div class="table-card"><table class="data-table"><thead><tr><th data-bn="নাম" data-en="Name">নাম</th><th data-bn="মোবাইল" data-en="Mobile">মোবাইল</th><th data-bn="ঠিকানা" data-en="Address">ঠিকানা</th><th data-bn="মোট পাওনা" data-en="Total Due">মোট পাওনা</th></tr></thead><tbody id="customer-body"><tr><td colspan="4" class="empty-msg">কোনো কাস্টমার নেই</td></tr></tbody></table></div>
     </section>
 
     <!-- SUPPLIER -->
     <section class="page" id="page-supplier">
       <div class="page-action-bar"><h2 data-bn="সাপ্লায়ার তালিকা" data-en="Supplier List">সাপ্লায়ার তালিকা</h2><button class="btn-primary" id="addSupplierBtn">+ <span data-bn="নতুন সাপ্লায়ার" data-en="New Supplier">নতুন সাপ্লায়ার</span></button></div>
       <div class="search-bar"><input type="text" id="supSearch" class="search-input" placeholder="নাম বা মোবাইল দিয়ে সার্চ করুন..."/></div>
-      <div class="table-card"><table class="data-table"><thead><tr><th data-bn="নাম" data-en="Name">নাম</th><th data-bn="মোবাইল" data-en="Mobile">মোবাইল</th><th data-bn="ঠিকানা" data-en="Address">ঠিকানা</th><th data-bn="দেয়া বাকি" data-en="Total Payable">দেয়া বাকি</th><th data-bn="অ্যাকশন" data-en="Action">অ্যাকশন</th></tr></thead><tbody id="supplier-body"><tr><td colspan="5" class="empty-msg">কোনো সাপ্লায়ার নেই</td></tr></tbody></table></div>
+      <div class="table-card"><table class="data-table"><thead><tr><th data-bn="নাম" data-en="Name">নাম</th><th data-bn="মোবাইল" data-en="Mobile">মোবাইল</th><th data-bn="ঠিকানা" data-en="Address">ঠিকানা</th><th data-bn="দেয়া বাকি" data-en="Total Payable">দেয়া বাকি</th></tr></thead><tbody id="supplier-body"><tr><td colspan="4" class="empty-msg">কোনো সাপ্লায়ার নেই</td></tr></tbody></table></div>
     </section>
 
     <!-- REPORT -->
@@ -208,10 +208,40 @@
 
 <!-- PROFILE SETTINGS MODAL -->
 <div class="modal-overlay" id="profileSettingsOverlay">
-  <div class="modal" id="profileSettingsModal" style="width:440px">
+  <div class="modal profile-settings-modal" id="profileSettingsModal">
     <div class="modal-header">
       <h3>⚙️ প্রোফাইল সেটিংস</h3>
       <button class="modal-close" id="profileSettingsClose">✕</button>
+    </div>
+    <div class="modal-body ps-body">
+      <!-- Edit Profile Card -->
+      <button class="ps-action-card" id="profileEditBtn">
+        <div class="ps-action-icon ps-icon-edit">✏️</div>
+        <div class="ps-action-text">
+          <div class="ps-action-title" data-bn="এডিট প্রোফাইল" data-en="Edit Profile">এডিট প্রোফাইল</div>
+          <div class="ps-action-sub" data-bn="নাম, মোবাইল ও ঠিকানা পরিবর্তন করুন" data-en="Change name, mobile & address">নাম, মোবাইল ও ঠিকানা পরিবর্তন করুন</div>
+        </div>
+        <span class="ps-action-arrow">›</span>
+      </button>
+      <!-- Delete Profile Card -->
+      <button class="ps-action-card ps-action-card-danger" id="profileDeleteBtn">
+        <div class="ps-action-icon ps-icon-delete">🗑️</div>
+        <div class="ps-action-text">
+          <div class="ps-action-title" data-bn="ডিলিট প্রোফাইল" data-en="Delete Profile">ডিলিট প্রোফাইল</div>
+          <div class="ps-action-sub" data-bn="এই কাস্টমার/সাপ্লায়ার মুছে ফেলুন" data-en="Remove this customer/supplier">এই কাস্টমার/সাপ্লায়ার মুছে ফেলুন</div>
+        </div>
+        <span class="ps-action-arrow">›</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE EDIT MODAL (name/phone/address form) -->
+<div class="modal-overlay" id="profileEditOverlay">
+  <div class="modal" id="profileEditModal" style="width:440px">
+    <div class="modal-header">
+      <h3>✏️ প্রোফাইল এডিট</h3>
+      <button class="modal-close" id="profileEditClose">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
@@ -228,8 +258,8 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-cancel" id="profileSettingsCancel">বাতিল</button>
-      <button class="btn-save" id="profileSettingsSave">✅ সংরক্ষণ করুন</button>
+      <button class="btn-cancel" id="profileEditCancel">বাতিল</button>
+      <button class="btn-save" id="profileEditSave">✅ সংরক্ষণ করুন</button>
     </div>
   </div>
 </div>
