@@ -638,8 +638,208 @@ $('profileDeleteBtn') && ($('profileDeleteBtn').onclick = async () => {
 
 // Print statement
 window.printStatement = function(mode) {
-  showToast('প্রিন্ট প্রস্তুত হচ্ছে...');
-  setTimeout(() => window.print(), 300);
+  if (!_profileId || !_profileType) return;
+  const list  = _profileType === 'customer' ? state.customers : state.suppliers;
+  const party = list.find(x => x.id === _profileId);
+  if (!party) return;
+
+  const storeName = state.storeName || 'DK';
+  const today = new Date().toLocaleDateString('bn-BD', { year:'numeric', month:'long', day:'numeric' });
+  const todayEn = new Date().toLocaleDateString('en-BD');
+
+  let rows = [];
+  let title = '';
+  let totalLabel = '';
+  let totalAmt = 0;
+
+  if (mode === 'sale') {
+    // বিক্রি স্টেটমেন্ট (customer) বা ক্রয় স্টেটমেন্ট (supplier)
+    const isCus = _profileType === 'customer';
+    const entries = isCus
+      ? state.sales.filter(s => s.customerId === _profileId)
+      : state.expenses.filter(e => e.supplierId === _profileId);
+    title = isCus ? 'বিক্রি ইতিহাস স্টেটমেন্ট' : 'ক্রয় ইতিহাস স্টেটমেন্ট';
+    totalLabel = isCus ? 'মোট বিক্রি' : 'মোট ক্রয়';
+    rows = entries.sort((a,b)=>a.date.localeCompare(b.date)).map((r,i) => {
+      totalAmt += parseAmt(r.amount);
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${r.date||'—'}</td>
+        <td style="color:#16a34a;font-weight:700">${fmt(r.amount)}</td>
+        <td>${r.note||'—'}</td>
+      </tr>`;
+    });
+  } else {
+    // পেমেন্ট স্টেটমেন্ট
+    title = 'পেমেন্ট ইতিহাস স্টেটমেন্ট';
+    totalLabel = 'মোট পেমেন্ট';
+    const payments = state.payments.filter(p => p.partyId === _profileId);
+    rows = payments.sort((a,b)=>a.date.localeCompare(b.date)).map((r,i) => {
+      totalAmt += parseAmt(r.amount);
+      const dirLabel = r.direction === 'in' ? 'রিসিভড' : 'পেইড';
+      const dirColor = r.direction === 'in' ? '#16a34a' : '#dc2626';
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${r.date||'—'}</td>
+        <td style="color:${dirColor};font-weight:700">${fmt(r.amount)}</td>
+        <td>${r.note||'—'}</td>
+      </tr>`;
+    });
+  }
+
+  const emptyRow = rows.length === 0
+    ? `<tr><td colspan="4" style="text-align:center;padding:24px;color:#9ca3af">কোনো ডেটা নেই</td></tr>`
+    : '';
+
+  const partyTypeLabel = _profileType === 'customer' ? 'কাস্টমার' : 'সাপ্লায়ার';
+
+  const html = `<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>${storeName} — ${title}</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hind Siliguri',sans-serif;background:#f0f2f5;color:#1e2340;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:30px 16px}
+  .statement-page{background:#fff;width:680px;max-width:100%;border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10)}
+  /* Header */
+  .st-header{padding:22px 28px 16px;border-bottom:3px solid #22c55e;display:flex;justify-content:space-between;align-items:flex-start}
+  .st-logo{display:flex;align-items:center;gap:10px}
+  .st-logo-icon{width:40px;height:40px;background:linear-gradient(135deg,#5b6af0,#22c55e);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .st-logo-name{font-size:18px;font-weight:700;color:#1e2340}
+  .st-logo-sub{font-size:11px;color:#6b7280;margin-top:1px}
+  .st-title-block{text-align:right}
+  .st-title{font-size:17px;font-weight:700;color:#16a34a}
+  .st-date{font-size:12px;color:#6b7280;margin-top:3px}
+  /* Party info */
+  .st-party{padding:14px 28px;background:#f8fafc;border-bottom:1px solid #e8ecf4;display:flex;gap:40px}
+  .st-party-item label{font-size:11px;color:#6b7280;display:block;margin-bottom:2px}
+  .st-party-item span{font-size:14px;font-weight:600;color:#1e2340}
+  /* Table */
+  .st-table-wrap{padding:0}
+  table{width:100%;border-collapse:collapse}
+  thead tr{background:#22c55e}
+  thead th{padding:11px 16px;text-align:left;font-size:13px;font-weight:600;color:#fff}
+  thead th:nth-child(1){width:52px;text-align:center}
+  thead th:nth-child(3){width:130px}
+  tbody tr:nth-child(even){background:#f8fafc}
+  tbody tr:hover{background:#f0fdf4}
+  tbody td{padding:10px 16px;font-size:13px;color:#374151;border-bottom:1px solid #e8ecf4}
+  tbody td:nth-child(1){text-align:center;color:#9ca3af;font-size:12px}
+  /* Total row */
+  .st-total{background:#1e2340 !important}
+  .st-total td{color:#fff !important;font-weight:700;font-size:14px;border:none !important}
+  /* Buttons */
+  .st-actions{display:flex;gap:12px;padding:20px 28px;border-top:1px solid #e8ecf4;justify-content:flex-end}
+  .btn-print{background:#22c55e;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit}
+  .btn-print:hover{background:#16a34a}
+  .btn-dl{background:#1e2340;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit}
+  .btn-dl:hover{background:#2a3057}
+  /* Footer */
+  .st-footer{padding:12px 28px;background:#f8fafc;border-top:1px solid #e8ecf4;display:flex;justify-content:space-between;font-size:11px;color:#9ca3af}
+  @media print{
+    body{background:#fff;padding:0}
+    .statement-page{box-shadow:none;border-radius:0;width:100%}
+    .st-actions{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="statement-page">
+  <div class="st-header">
+    <div class="st-logo">
+      <div class="st-logo-icon">📊</div>
+      <div>
+        <div class="st-logo-name">${storeName}</div>
+        <div class="st-logo-sub">Accounting System</div>
+      </div>
+    </div>
+    <div class="st-title-block">
+      <div class="st-title">${title}</div>
+      <div class="st-date">তারিখ: ${todayEn}</div>
+    </div>
+  </div>
+
+  <div class="st-party">
+    <div class="st-party-item">
+      <label>${partyTypeLabel}</label>
+      <span>${party.name||'—'}</span>
+    </div>
+    <div class="st-party-item">
+      <label>মোবাইল</label>
+      <span>${party.phone||'—'}</span>
+    </div>
+    <div class="st-party-item">
+      <label>ঠিকানা</label>
+      <span>${party.address||'—'}</span>
+    </div>
+  </div>
+
+  <div class="st-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ক্রমিক</th>
+          <th>তারিখ</th>
+          <th>পরিমাণ (৳)</th>
+          <th>নোট</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.join('')}
+        ${emptyRow}
+        <tr class="st-total">
+          <td colspan="2" style="text-align:right;padding-right:16px">${totalLabel}:</td>
+          <td>${fmt(totalAmt)}</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="st-actions">
+    <button class="btn-print" onclick="window.print()">🖨️ প্রিন্ট করুন</button>
+    <button class="btn-dl" onclick="downloadStatement()">📥 ডাউনলোড করুন</button>
+  </div>
+
+  <div class="st-footer">
+    <span>${storeName} — ${title}</span>
+    <span>মোট এন্ট্রি: ${rows.length} টি &nbsp;|&nbsp; ${todayEn}</span>
+  </div>
+</div>
+<script>
+function downloadStatement() {
+  const clone = document.querySelector('.statement-page').cloneNode(true);
+  clone.querySelector('.st-actions').remove();
+  const blob = new Blob(['<!DOCTYPE html><html lang="bn"><head><meta charset="UTF-8"/>' + document.head.innerHTML + '</head><body style="background:#fff;padding:20px">' + clone.outerHTML + '</body></html>'], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '${storeName}_statement_${party.name||'unknown'}.html';
+  a.click();
+}
+</script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank', 'width=750,height=700,scrollbars=yes,resizable=yes');
+  if (win) {
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+  } else {
+    // popup blocked fallback — use iframe
+    const frame = $('printFrame');
+    frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:none;z-index:99999;display:block';
+    frame.srcdoc = html;
+    // close button
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕ বন্ধ করুন';
+    closeBtn.style.cssText = 'position:fixed;top:12px;right:12px;z-index:999999;background:#ef4444;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit';
+    closeBtn.onclick = () => { frame.style.display='none'; closeBtn.remove(); };
+    document.body.appendChild(closeBtn);
+  }
 };
 
 // ===== MODAL =====
