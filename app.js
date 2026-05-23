@@ -7,7 +7,7 @@
 /* ================================================================
    ⚠️  এখানে আপনার Google Apps Script Web App URL বসান
    ================================================================ */
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzqlQJL2ePGJZrw0Eh91RmXj6lNtTqbNODebpB85tUe2mm5xZPE1SYOZze1_kO40rcF/exec';
+const SCRIPT_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
 /* ================================================================ */
 
 // ===== UTILS =====
@@ -345,12 +345,9 @@ function renderCustomers() {
           <td>${c.phone||'—'}</td>
           <td>${c.address||'—'}</td>
           <td><strong style="color:${bal>0?'var(--red)':'var(--green)'}">${fmt(bal)}</strong></td>
-          <td class="action-btns">
-            <button class="btn-edit"   onclick="editEntry('customer','${c.id}')">✏️ এডিট</button>
-            <button class="btn-delete" onclick="delEntry('customer','${c.id}')">🗑️ মুছুন</button>
-          </td></tr>`;
+          </tr>`;
       }).join('')
-    : '<tr><td colspan="5" class="empty-msg">কোনো কাস্টমার নেই</td></tr>';
+    : '<tr><td colspan="4" class="empty-msg">কোনো কাস্টমার নেই</td></tr>';
 }
 
 // ===== RENDER SUPPLIERS =====
@@ -381,12 +378,9 @@ function renderSuppliers() {
           <td>${s.phone||'—'}</td>
           <td>${s.address||'—'}</td>
           <td><strong style="color:${bal>0?'var(--red)':'var(--green)'}">${fmt(bal)}</strong></td>
-          <td class="action-btns">
-            <button class="btn-edit"   onclick="editEntry('supplier','${s.id}')">✏️ এডিট</button>
-            <button class="btn-delete" onclick="delEntry('supplier','${s.id}')">🗑️ মুছুন</button>
-          </td></tr>`;
+          </tr>`;
       }).join('')
-    : '<tr><td colspan="5" class="empty-msg">কোনো সাপ্লায়ার নেই</td></tr>';
+    : '<tr><td colspan="4" class="empty-msg">কোনো সাপ্লায়ার নেই</td></tr>';
 }
 
 // ===== RENDER REPORT =====
@@ -512,7 +506,11 @@ window.editEntry = function(type, id) {
 };
 
 // ===== PROFILE =====
+let _profileType = null, _profileId = null;
+
 window.openProfile = function(type, id) {
+  _profileType = type;
+  _profileId   = id;
   const list  = type === 'customer' ? state.customers : state.suppliers;
   const party = list.find(x => x.id === id);
   if (!party) return;
@@ -564,13 +562,79 @@ window.openProfile = function(type, id) {
   $('profileOverlay').onclick = e => { if (e.target === $('profileOverlay')) $('profileOverlay').style.display = 'none'; };
 };
 
-// Profile Settings
+// Profile Settings — card-style modal
 $('profileSettingsBtn') && ($('profileSettingsBtn').onclick = () => {
   $('profileSettingsOverlay').style.display = 'flex';
 });
-$('profileSettingsClose')  && ($('profileSettingsClose').onclick  = () => { $('profileSettingsOverlay').style.display = 'none'; });
-$('profileSettingsCancel') && ($('profileSettingsCancel').onclick = () => { $('profileSettingsOverlay').style.display = 'none'; });
-$('profileSettingsSave')   && ($('profileSettingsSave').onclick   = () => { $('profileSettingsOverlay').style.display = 'none'; });
+$('profileSettingsClose') && ($('profileSettingsClose').onclick = () => {
+  $('profileSettingsOverlay').style.display = 'none';
+});
+$('profileSettingsOverlay') && ($('profileSettingsOverlay').onclick = e => {
+  if (e.target === $('profileSettingsOverlay')) $('profileSettingsOverlay').style.display = 'none';
+});
+
+// Edit card — open edit form modal
+$('profileEditBtn') && ($('profileEditBtn').onclick = () => {
+  if (!_profileId || !_profileType) return;
+  const list  = _profileType === 'customer' ? state.customers : state.suppliers;
+  const party = list.find(x => x.id === _profileId);
+  if (!party) return;
+  $('ps-name').value    = party.name    || '';
+  $('ps-phone').value   = party.phone   || '';
+  $('ps-address').value = party.address || '';
+  $('profileSettingsOverlay').style.display = 'none';
+  $('profileEditOverlay').style.display = 'flex';
+});
+$('profileEditClose')  && ($('profileEditClose').onclick  = () => { $('profileEditOverlay').style.display = 'none'; });
+$('profileEditCancel') && ($('profileEditCancel').onclick = () => { $('profileEditOverlay').style.display = 'none'; });
+$('profileEditOverlay') && ($('profileEditOverlay').onclick = e => {
+  if (e.target === $('profileEditOverlay')) $('profileEditOverlay').style.display = 'none';
+});
+
+// Edit Save
+$('profileEditSave') && ($('profileEditSave').onclick = async () => {
+  if (!_profileId || !_profileType) return;
+  const sheetName = _profileType === 'customer' ? 'customers' : 'suppliers';
+  const list = _profileType === 'customer' ? state.customers : state.suppliers;
+  const idx  = list.findIndex(x => x.id === _profileId);
+  if (idx < 0) return;
+  const updatedData = {
+    ...list[idx],
+    name:    $('ps-name').value.trim(),
+    phone:   $('ps-phone').value.trim(),
+    address: $('ps-address').value.trim(),
+  };
+  if (!updatedData.name) { showToast('নাম দিন', 'error'); return; }
+  showLoading('আপডেট হচ্ছে...');
+  try {
+    await apiPost({ action: 'edit', sheet: sheetName, id: _profileId, data: updatedData });
+    list[idx] = updatedData;
+    renderAll();
+    hideLoading();
+    $('profileEditOverlay').style.display = 'none';
+    openProfile(_profileType, _profileId);
+    showToast('আপডেট হয়েছে!');
+  } catch(e) { hideLoading(); showToast('আপডেটে সমস্যা: ' + e.message, 'error'); }
+});
+
+// Delete card
+$('profileDeleteBtn') && ($('profileDeleteBtn').onclick = async () => {
+  if (!_profileId || !_profileType) return;
+  const label = _profileType === 'customer' ? 'কাস্টমার' : 'সাপ্লায়ার';
+  if (!confirm(`এই ${label} মুছে ফেলবেন?`)) return;
+  const sheetName = _profileType === 'customer' ? 'customers' : 'suppliers';
+  showLoading('মুছে ফেলা হচ্ছে...');
+  try {
+    await apiPost({ action: 'delete', sheet: sheetName, id: _profileId });
+    if (_profileType === 'customer') state.customers = state.customers.filter(x => x.id !== _profileId);
+    else state.suppliers = state.suppliers.filter(x => x.id !== _profileId);
+    renderAll();
+    hideLoading();
+    $('profileSettingsOverlay').style.display = 'none';
+    $('profileOverlay').style.display = 'none';
+    showToast('মুছে ফেলা হয়েছে!');
+  } catch(e) { hideLoading(); showToast('মুছতে সমস্যা: ' + e.message, 'error'); }
+});
 
 // Print statement
 window.printStatement = function(mode) {
