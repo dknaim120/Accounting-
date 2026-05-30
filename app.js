@@ -799,27 +799,12 @@ window.printStatement = function(mode) {
     </table>
   </div>
 
-  <div class="st-actions">
-    <button class="btn-print" onclick="window.print()">🖨️ প্রিন্ট করুন</button>
-    <button class="btn-dl" onclick="downloadStatement()">📥 ডাউনলোড করুন</button>
-  </div>
-
   <div class="st-footer">
     <span>${storeName} — ${title}</span>
     <span>মোট এন্ট্রি: ${rows.length} টি &nbsp;|&nbsp; ${todayEn}</span>
   </div>
 </div>
-<script>
-function downloadStatement() {
-  const clone = document.querySelector('.statement-page').cloneNode(true);
-  clone.querySelector('.st-actions').remove();
-  const blob = new Blob(['<!DOCTYPE html><html lang="bn"><head><meta charset="UTF-8"/>' + document.head.innerHTML + '</head><body style="background:#fff;padding:20px">' + clone.outerHTML + '</body></html>'], {type:'text/html'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = '${storeName}_statement_${party.name||'unknown'}.html';
-  a.click();
-}
-</script>
+<script>window.onload=function(){window.print();};<\/script>
 </body>
 </html>`;
 
@@ -1199,8 +1184,199 @@ $('storeName').oninput = e => {
   }
 };
 
-// ===== PRINT =====
-if ($('printReportBtn')) $('printReportBtn').onclick = () => window.print();
+// ===== PRINT REPORT (3 pages) =====
+if ($('printReportBtn')) $('printReportBtn').onclick = function() {
+  const storeName = state.storeName || 'হিসাব';
+  const todayEn = new Date().toLocaleDateString('en-BD');
+
+  const { totalSales, totalExp, totalIn, totalOut } = totalsFiltered();
+  const receivables = Array.from(computeCustomerBalances().values()).reduce((a,b)=>a+Math.max(0,b),0);
+  const payables    = Array.from(computeSupplierBalances().values()).reduce((a,b)=>a+Math.max(0,b),0);
+
+  // ---- Page 1: Sales ----
+  const salesRows = state.sales.filter(s=>inRange(s.date)).sort((a,b)=>b.date.localeCompare(a.date));
+  const salesTotal = salesRows.reduce((a,r)=>a+parseAmt(r.amount),0);
+  const salesHtml = salesRows.length
+    ? salesRows.map((r,i)=>`<tr><td class="idx">${i+1}</td><td>${r.date||'—'}</td><td>${r.customerId?partyName(r.customerId,state.customers):'—'}</td><td class="amt green">${fmt(r.amount)}</td><td>${r.note||'—'}</td></tr>`).join('')
+    : `<tr><td colspan="5" class="empty">কোনো ডেটা নেই</td></tr>`;
+
+  // ---- Page 2: Expenses ----
+  const expRows = state.expenses.filter(e=>inRange(e.date)).sort((a,b)=>b.date.localeCompare(a.date));
+  const expTotal = expRows.reduce((a,r)=>a+parseAmt(r.amount),0);
+  const expHtml = expRows.length
+    ? expRows.map((r,i)=>`<tr><td class="idx">${i+1}</td><td>${r.date||'—'}</td><td>${r.supplierId?partyName(r.supplierId,state.suppliers):'—'}</td><td class="amt red">${fmt(r.amount)}</td><td>${r.note||'—'}</td></tr>`).join('')
+    : `<tr><td colspan="5" class="empty">কোনো ডেটা নেই</td></tr>`;
+
+  // ---- Page 3: Payments ----
+  const payRows = state.payments.filter(p=>inRange(p.date)).sort((a,b)=>b.date.localeCompare(a.date));
+  const payTotal = payRows.reduce((a,r)=>a+parseAmt(r.amount),0);
+  const payHtml = payRows.length
+    ? payRows.map((r,i)=>`<tr><td class="idx">${i+1}</td><td>${r.date||'—'}</td><td>${r.direction==='in'?'<span class="badge-g">রিসিভড</span>':'<span class="badge-r">পেইড</span>'}</td><td>${r.partyType==='customer'?partyName(r.partyId,state.customers):partyName(r.partyId,state.suppliers)}</td><td class="amt">${fmt(r.amount)}</td><td>${r.note||'—'}</td></tr>`).join('')
+    : `<tr><td colspan="6" class="empty">কোনো ডেটা নেই</td></tr>`;
+
+  // date range label
+  const fromVal = $('dateFrom').value;
+  const toVal   = $('dateTo').value;
+  const rangeLbl = (fromVal && toVal) ? `${fromVal} — ${toVal}` : (fromVal ? fromVal + ' থেকে' : (toVal ? toVal + ' পর্যন্ত' : 'সব তারিখ'));
+
+  const pageHeader = (title, color) => `
+    <div class="ph">
+      <div class="ph-left">
+        <div class="ph-icon" style="background:linear-gradient(135deg,${color},#1e2340)">📊</div>
+        <div>
+          <div class="ph-store">${storeName}</div>
+          <div class="ph-sub">Accounting System</div>
+        </div>
+      </div>
+      <div class="ph-right">
+        <div class="ph-title" style="color:${color}">${title}</div>
+        <div class="ph-date">তারিখ: ${todayEn} &nbsp;|&nbsp; পরিসর: ${rangeLbl}</div>
+      </div>
+    </div>`;
+
+  const totalRow5 = (label, amt, color) =>
+    `<tr class="total-row"><td colspan="3" class="total-label">${label}:</td><td class="amt" style="color:${color}">${fmt(amt)}</td><td></td></tr>`;
+  const totalRow6 = (label, amt) =>
+    `<tr class="total-row"><td colspan="4" class="total-label">${label}:</td><td class="amt">${fmt(amt)}</td><td></td></tr>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>${storeName} — রিপোর্ট</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Hind Siliguri',sans-serif;background:#f0f2f5;color:#1e2340;padding:24px 16px}
+  .page-wrap{background:#fff;width:720px;max-width:100%;margin:0 auto 32px;border-radius:10px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10)}
+  /* Page Header */
+  .ph{padding:20px 26px 16px;border-bottom:3px solid;display:flex;justify-content:space-between;align-items:center}
+  .ph-left{display:flex;align-items:center;gap:12px}
+  .ph-icon{width:42px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .ph-store{font-size:17px;font-weight:700;color:#1e2340}
+  .ph-sub{font-size:11px;color:#6b7280}
+  .ph-right{text-align:right}
+  .ph-title{font-size:16px;font-weight:700}
+  .ph-date{font-size:11px;color:#6b7280;margin-top:3px}
+  /* Page 1 green, Page 2 red, Page 3 blue */
+  .p1 .ph{border-color:#22c55e} .p2 .ph{border-color:#ef4444} .p3 .ph{border-color:#3b82f6}
+  /* Summary strip */
+  .summary{display:flex;gap:0;border-bottom:1px solid #e8ecf4}
+  .sum-item{flex:1;padding:12px 18px;border-right:1px solid #e8ecf4}
+  .sum-item:last-child{border-right:none}
+  .sum-label{font-size:11px;color:#6b7280;margin-bottom:3px}
+  .sum-val{font-size:16px;font-weight:700}
+  /* Table */
+  table{width:100%;border-collapse:collapse}
+  thead tr{background:#1e2340}
+  thead th{padding:10px 14px;text-align:left;font-size:12px;font-weight:600;color:#fff}
+  .idx{width:44px;text-align:center}
+  tbody tr:nth-child(even){background:#f8fafc}
+  tbody td{padding:9px 14px;font-size:13px;color:#374151;border-bottom:1px solid #e8ecf4}
+  tbody td.idx{text-align:center;color:#9ca3af;font-size:12px}
+  .empty{text-align:center;padding:20px;color:#9ca3af}
+  .amt{font-weight:700}
+  .green{color:#16a34a} .red{color:#dc2626}
+  .badge-g{background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700}
+  .badge-r{background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700}
+  .total-row td{background:#1e2340 !important;color:#fff !important;font-weight:700;font-size:14px;border:none !important}
+  .total-label{text-align:right;padding-right:16px !important}
+  /* Actions */
+  .actions{display:flex;gap:12px;padding:18px 26px;border-top:1px solid #e8ecf4;justify-content:flex-end}
+  .btn-print{background:#22c55e;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+  .btn-print:hover{background:#16a34a}
+  /* Footer */
+  .pf{padding:10px 26px;background:#f8fafc;border-top:1px solid #e8ecf4;display:flex;justify-content:space-between;font-size:11px;color:#9ca3af}
+  @media print{
+    body{background:#fff;padding:0}
+    .page-wrap{box-shadow:none;border-radius:0;width:100%;margin:0;page-break-after:always}
+    .page-wrap:last-of-type{page-break-after:auto}
+    .actions{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: বিক্রির বিবরণ -->
+<div class="page-wrap p1">
+  ${pageHeader('বিক্রির বিবরণ','#22c55e')}
+  <div class="summary">
+    <div class="sum-item"><div class="sum-label">মোট বিক্রি</div><div class="sum-val green">${fmt(salesTotal)}</div></div>
+    <div class="sum-item"><div class="sum-label">মোট এন্ট্রি</div><div class="sum-val">${salesRows.length} টি</div></div>
+  </div>
+  <table>
+    <thead><tr><th class="idx">ক্রমিক</th><th>তারিখ</th><th>কাস্টমার</th><th>পরিমাণ (৳)</th><th>নোট</th></tr></thead>
+    <tbody>
+      ${salesHtml}
+      ${salesRows.length ? totalRow5('মোট বিক্রি', salesTotal, '#22c55e') : ''}
+    </tbody>
+  </table>
+  <div class="pf"><span>${storeName} — বিক্রির বিবরণ</span><span>${rangeLbl} &nbsp;|&nbsp; ${todayEn}</span></div>
+</div>
+
+<!-- PAGE 2: খরচের বিবরণ -->
+<div class="page-wrap p2">
+  ${pageHeader('খরচের বিবরণ','#ef4444')}
+  <div class="summary">
+    <div class="sum-item"><div class="sum-label">মোট খরচ</div><div class="sum-val red">${fmt(expTotal)}</div></div>
+    <div class="sum-item"><div class="sum-label">মোট এন্ট্রি</div><div class="sum-val">${expRows.length} টি</div></div>
+  </div>
+  <table>
+    <thead><tr><th class="idx">ক্রমিক</th><th>তারিখ</th><th>সাপ্লায়ার</th><th>পরিমাণ (৳)</th><th>নোট</th></tr></thead>
+    <tbody>
+      ${expHtml}
+      ${expRows.length ? totalRow5('মোট খরচ', expTotal, '#ef4444') : ''}
+    </tbody>
+  </table>
+  <div class="pf"><span>${storeName} — খরচের বিবরণ</span><span>${rangeLbl} &nbsp;|&nbsp; ${todayEn}</span></div>
+</div>
+
+<!-- PAGE 3: পেমেন্টের বিবরণ -->
+<div class="page-wrap p3">
+  ${pageHeader('পেমেন্টের বিবরণ','#3b82f6')}
+  <div class="summary">
+    <div class="sum-item"><div class="sum-label">রিসিভড</div><div class="sum-val green">${fmt(totalIn)}</div></div>
+    <div class="sum-item"><div class="sum-label">পেইড</div><div class="sum-val red">${fmt(totalOut)}</div></div>
+    <div class="sum-item"><div class="sum-label">ক্যাশ ব্যালেন্স</div><div class="sum-val" style="color:#3b82f6">${fmt(totalIn-totalOut)}</div></div>
+    <div class="sum-item"><div class="sum-label">মোট পাওনা</div><div class="sum-val red">${fmt(receivables)}</div></div>
+    <div class="sum-item"><div class="sum-label">দেওয়া বাকি</div><div class="sum-val" style="color:#f97316">${fmt(payables)}</div></div>
+  </div>
+  <table>
+    <thead><tr><th class="idx">ক্রমিক</th><th>তারিখ</th><th>ধরন</th><th>নাম</th><th>পরিমাণ (৳)</th><th>নোট</th></tr></thead>
+    <tbody>
+      ${payHtml}
+      ${payRows.length ? totalRow6('মোট পেমেন্ট', payTotal) : ''}
+    </tbody>
+  </table>
+  <div class="pf"><span>${storeName} — পেমেন্টের বিবরণ</span><span>${rangeLbl} &nbsp;|&nbsp; ${todayEn}</span></div>
+</div>
+
+<div class="actions">
+  <button class="btn-print" onclick="window.print()">🖨️ প্রিন্ট করুন</button>
+</div>
+
+<script>window.onload=function(){window.print();};<\/script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank', 'width=800,height=750,scrollbars=yes,resizable=yes');
+  if (win) {
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+  } else {
+    // popup blocked — iframe fallback
+    const frame = $('printFrame');
+    frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;border:none;z-index:99999;display:block';
+    frame.srcdoc = html;
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕ বন্ধ করুন';
+    closeBtn.style.cssText = 'position:fixed;top:12px;right:12px;z-index:999999;background:#ef4444;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit';
+    closeBtn.onclick = () => { frame.style.display='none'; closeBtn.remove(); };
+    document.body.appendChild(closeBtn);
+  }
+};
 
 // ===== EXPORT (JSON backup) =====
 $('exportBtn').onclick = () => {
